@@ -1,0 +1,27 @@
+{
+  "packageId": "net.revoba.fotomacera",
+  "host": "kerembasbug.github.io",
+  "name": "Foto Macera — Fotoğraf Oyunu",
+  "launcherName": "Foto Macera",
+  "display": "standalone",
+  "themeColor": "#1b2a4a",
+  "navigationColor": "#142038",
+  "backgroundColor": "#142038",
+  "enableNotifications": false,
+  "startUrl": "/foto-macera/?utm_source=twa",
+  "iconUrl": "https://kerembasbug.github.io/foto-macera/art/icon-512.png",
+  "maskableIconUrl": "https://kerembasbug.github.io/foto-macera/art/icon-maskable.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingMode": "none",
+  "fallbackType": "customtabs",
+  "features": {
+    "locationDelegation": { "enabled": false },
+    "playBilling": { "enabled": false }
+  },
+  "alphaDependencies": { "enabled": false },
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://kerembasbug.github.io/foto-macera/manifest.webmanifest",
+  "orientation": "portrait",
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1
+}
