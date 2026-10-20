@@ -3,13 +3,22 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 const base = process.env.BASE_URL ?? '/'
+// Capacitor (telefon uygulaması) derlemesi: dosyalar zaten telefonda, service worker gerekmez.
+const isNative = !!process.env.CAP
 
 export default defineConfig({
   base,
   plugins: [
     react(),
     VitePWA({
+      disable: isNative,
       registerType: 'autoUpdate',
+      // Tam çevrimdışı: ilk açılışta oyunun tüm dosyaları telefona kaydedilir.
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,webp,png,svg,ico,webmanifest}'],
+        globIgnores: ['art/feature-graphic.jpg'],
+        cleanupOutdatedCaches: true,
+      },
       includeAssets: ['art/icon-192.png', 'art/icon-512.png', 'art/icon-maskable.png', 'art/mascot.png'],
       manifest: {
         name: 'Foto Macera — Fotoğraf Oyunu',

@@ -1,0 +1,12 @@
+[
+  { "file": "public/art/mascot/happy.png", "ref": "art/ref/mascot-1024.png", "removeBg": true,
+    "prompt": "Keep this exact same cute blue cartoon camera character with the face inside the lens, same colors, same style, same thick black outlines. Change only the expression: very happy big open smile, eyes closed in joy like upside-down U shapes, small pink blush cheeks. Plain white background." },
+  { "file": "public/art/mascot/cheer.png", "ref": "art/ref/mascot-1024.png", "removeBg": true,
+    "prompt": "Keep this exact same cute blue cartoon camera character with the face inside the lens, same colors, same style, same thick black outlines. Give it two small cartoon arms raised up high in celebration, ecstatic huge smile, sparkling star-shaped eyes, a few small yellow sparkles around it. Plain white background." },
+  { "file": "public/art/mascot/wow.png", "ref": "art/ref/mascot-1024.png", "removeBg": true,
+    "prompt": "Keep this exact same cute blue cartoon camera character with the face inside the lens, same colors, same style, same thick black outlines. Change only the expression: surprised and amazed, wide round eyes, small round O-shaped open mouth, eyebrows raised. Plain white background." },
+  { "file": "public/art/mascot/sad.png", "ref": "art/ref/mascot-1024.png", "removeBg": true,
+    "prompt": "Keep this exact same cute blue cartoon camera character with the face inside the lens, same colors, same style, same thick black outlines. Change only the expression: gently sad but encouraging, slightly droopy eyes, small wobbly frown, one tiny tear. Still cute, not scary. Plain white background." },
+  { "file": "public/art/mascot/think.png", "ref": "art/ref/mascot-1024.png", "removeBg": true,
+    "prompt": "Keep this exact same cute blue cartoon camera character with the face inside the lens, same colors, same style, same thick black outlines. Change only the expression: thinking and curious, eyes looking up to one side, small sideways smile, a small yellow lightbulb icon floating above. Plain white background." }
+]

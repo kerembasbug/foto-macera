@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { LEVELS, WORLDS, levelsByWorld, earnedBadgeIds, getBadge } from './game.js'
 
 const KEY = 'foto-macera-v1'
+export const FREE_MAX = 12
 
 function load() {
   try {
@@ -26,18 +27,20 @@ export function useProgress() {
 
   // Bir çekimi kaydet: yıldızları güncelle + albüme en iyi kareyi koy.
   // shot = { a, s, i, stars, total } (a/s/i = ayar indeksleri)
-  const recordShot = useCallback((levelId, shot) => {
+  const recordShot = useCallback((levelId, shot, { master = false } = {}) => {
     setData((d) => {
+      const crowns = master && shot.stars === 3 ? { ...(d.crowns ?? {}), [levelId]: true } : d.crowns
       const album = { ...(d.album ?? {}) }
       const ex = album[levelId]
       if (!ex || shot.stars > ex.stars || (shot.stars === ex.stars && shot.total > ex.total)) {
-        album[levelId] = { a: shot.a, s: shot.s, i: shot.i, stars: shot.stars, total: shot.total }
+        album[levelId] = { a: shot.a, s: shot.s, i: shot.i, f: shot.f ?? null, w: shot.w ?? null, stars: shot.stars, total: shot.total }
       }
       return {
         ...d,
         shots: (d.shots ?? 0) + 1,
         stars: { ...d.stars, [levelId]: Math.max(d.stars[levelId] ?? 0, shot.stars) },
         album,
+        crowns,
       }
     })
   }, [])
@@ -55,6 +58,18 @@ export function useProgress() {
     })
   }, [])
 
+  // Serbest mod kareleri: en yeni başta, en çok FREE_MAX kare.
+  const saveFreeShot = useCallback((shot) => {
+    setData((d) => ({
+      ...d,
+      shots: (d.shots ?? 0) + 1,
+      freeShots: [{ ...shot, id: Date.now() }, ...(d.freeShots ?? [])].slice(0, FREE_MAX),
+    }))
+  }, [])
+  const deleteFreeShot = useCallback((id) => {
+    setData((d) => ({ ...d, freeShots: (d.freeShots ?? []).filter((x) => x.id !== id) }))
+  }, [])
+
   const markTutorialSeen = useCallback(() => setData((d) => ({ ...d, tutorialSeen: true })), [])
 
   const reset = useCallback(() => setData({ stars: {}, shots: 0 }), [])
@@ -64,7 +79,9 @@ export function useProgress() {
 
   // Rozetler: kazanılmış olanlar + henüz görülmemiş (yeni) olanlar.
   const albumCount = Object.keys(data.album ?? {}).length
-  const earned = earnedBadgeIds({ stars: data.stars, shots: data.shots ?? 0, totalStars, albumCount })
+  const crownCount = Object.keys(data.crowns ?? {}).length
+  const crownOf = (id) => !!data.crowns?.[id]
+  const earned = earnedBadgeIds({ stars: data.stars, shots: data.shots ?? 0, totalStars, albumCount, crownCount })
   const seen = data.seenBadges ?? []
   const newBadges = earned.filter((id) => !seen.includes(id)).map(getBadge)
   const hasBadge = (id) => earned.includes(id)
@@ -74,6 +91,7 @@ export function useProgress() {
         stars: d.stars, shots: d.shots ?? 0,
         totalStars: LEVELS.reduce((a, l) => a + (d.stars[l.id] ?? 0), 0),
         albumCount: Object.keys(d.album ?? {}).length,
+        crownCount: Object.keys(d.crowns ?? {}).length,
       })
       return { ...d, seenBadges: e }
     })
@@ -104,7 +122,8 @@ export function useProgress() {
 
   return {
     starsOf, totalStars, isUnlocked, recordShot, reset, shots: data.shots ?? 0,
-    album: data.album ?? {}, albumCount,
+    album: data.album ?? {}, albumCount, crownOf, crownCount,
+    freeShots: data.freeShots ?? [], saveFreeShot, deleteFreeShot,
     newBadges, hasBadge, ackBadges,
     recordDaily, dailyDoneToday,
     dailyStreak: dailyDoneToday ? daily.streak : (daily.date === yesterdayStr() ? daily.streak : 0),

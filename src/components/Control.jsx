@@ -1,4 +1,8 @@
+import { m as motion } from 'motion/react'
+import { tick } from '../sound.js'
+
 // Tek bir kamera ayarı kartı (büyük, dokunmatik dostu kaydırıcı).
+// Her kademe değişiminde tık sesi + değer "zıplar".
 export default function Control({ icon, title, sub, value, max, index, onChange, leftLabel, rightLabel, hint }) {
   return (
     <div className="control">
@@ -8,7 +12,15 @@ export default function Control({ icon, title, sub, value, max, index, onChange,
           <strong>{title}</strong>
           <small>{sub}</small>
         </div>
-        <span className="control-value">{value}</span>
+        <motion.span
+          key={value}
+          className="control-value"
+          initial={{ scale: 1.35, y: -4 }}
+          animate={{ scale: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 520, damping: 18 }}
+        >
+          {value}
+        </motion.span>
       </div>
       <input
         type="range"
@@ -16,13 +28,23 @@ export default function Control({ icon, title, sub, value, max, index, onChange,
         max={max}
         step="1"
         value={index}
-        onChange={(e) => onChange(Number(e.target.value))}
+        aria-label={title}
+        style={{ '--fill': `${(index / max) * 100}%` }}
+        onChange={(e) => {
+          const v = Number(e.target.value)
+          if (v !== index) tick()
+          onChange(v)
+        }}
       />
       <div className="range-labels">
         <span>{leftLabel}</span>
         <span>{rightLabel}</span>
       </div>
-      {hint && <p className="hint">{hint}</p>}
+      {hint && (
+        <motion.p key={hint} className="hint" initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}>
+          {hint}
+        </motion.p>
+      )}
     </div>
   )
 }

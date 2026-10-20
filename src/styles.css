@@ -46,7 +46,7 @@ body {
   aspect-ratio: 4 / 3;
   background: #000;
 }
-.scene { position: absolute; inset: 0; transition: filter 0.2s ease; }
+.scene { position: absolute; inset: 0; }
 .scene-svg { width: 100%; height: 100%; display: block; }
 
 .ambient {
@@ -89,14 +89,29 @@ body {
 }
 
 /* ---------- Kelebek hareketi ---------- */
-.butterfly.flying { animation: flutter 2.6s ease-in-out infinite; transform-origin: center; }
+/* hareketli konular */
+.mover-flutter { animation: flutter 2.6s ease-in-out infinite; }
+.mover-glide { animation: glide 3.4s ease-in-out infinite; }
+.mover-kick { animation: kick 2.2s cubic-bezier(.45,.05,.55,.95) infinite; }
+.mover.paused { animation-play-state: paused; }
 @keyframes flutter {
   0%   { transform: translate(0, 0); }
   25%  { transform: translate(60px, -22px); }
-  50%  { transform: translate(120px, 8px); }
-  75%  { transform: translate(50px, 26px); }
+  50%  { transform: translate(110px, 8px); }
+  75%  { transform: translate(40px, 26px); }
   100% { transform: translate(0, 0); }
 }
+@keyframes glide {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(150px, 18px); }
+}
+@keyframes kick {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(160px, -40px); }
+}
+.twinkle { animation: twinkle 2.4s ease-in-out infinite; }
+.twinkle.t1 { animation-delay: 0.8s; } .twinkle.t2 { animation-delay: 1.6s; }
+@keyframes twinkle { 50% { opacity: 0.35; } }
 
 /* ---------- Pozlama göstergesi ---------- */
 .meter {
@@ -168,8 +183,8 @@ body {
 input[type='range'] {
   -webkit-appearance: none; appearance: none;
   width: 100%; height: 14px; border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent), #7ec8ff);
-  margin: 10px 0 4px; cursor: pointer;
+  background: linear-gradient(90deg, var(--accent) 0%, #7ec8ff var(--fill, 50%), #31466f var(--fill, 50%));
+  margin: 10px 0 4px; cursor: pointer; touch-action: pan-y;
 }
 input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
@@ -453,10 +468,9 @@ input[type='range']::-moz-range-thumb {
 }
 
 .result-stars { display: flex; justify-content: center; gap: 10px; }
-.big-star {
-  font-size: 2.6rem; color: #46588a; transform: scale(0.4); opacity: 0.5;
-}
-.big-star.on { color: var(--accent2); animation: pop 0.4s cubic-bezier(.34,1.56,.64,1) forwards; }
+.big-star-slot { position: relative; display: inline-block; width: 2.6rem; height: 3rem; }
+.big-star { position: absolute; inset: 0; text-align: center; font-size: 2.6rem; line-height: 3rem; color: #3a4a74; }
+.big-star.on { color: var(--accent2); text-shadow: 0 0 18px rgba(244, 183, 64, 0.7); }
 @keyframes pop { to { transform: scale(1); opacity: 1; } }
 
 .result-head { display: flex; align-items: center; gap: 10px; }
@@ -611,3 +625,150 @@ input[type='range']::-moz-range-thumb {
   font-size: 1.1rem; font-weight: 800; font-family: inherit; cursor: pointer;
 }
 .wc-btn:active { transform: scale(0.97); }
+
+/* ---------- Faz 1: hissiyat ---------- */
+.screen { display: flex; flex-direction: column; }
+.brief-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.brief-row p { margin: 0; }
+.confetti-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 80; }
+.develop { position: absolute; inset: 0; }
+.control-value { display: inline-block; }
+.meter-needle { transition: left 0.28s cubic-bezier(.34,1.56,.64,1); }
+.hero-sound-group { position: absolute; top: 10px; right: 10px; display: flex; gap: 8px; z-index: 3; }
+.hero-sound-group .sound-btn { position: static; }
+.wc-card .mascot { margin: 0 auto; display: block; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ---------- Faz 2: dünya haritası ---------- */
+.trail { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 6px 4px 2px; color: var(--w); }
+.trail-path { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.55; pointer-events: none; }
+.trail-row { position: relative; display: flex; align-items: center; gap: 14px; min-height: 112px; }
+.trail-row.right { flex-direction: row-reverse; text-align: right; }
+.trail-node {
+  position: relative; flex: none; width: 112px; height: 112px; padding: 0; border-radius: 50%;
+  border: 5px solid var(--w); background: #0d1426; cursor: pointer;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.4), inset 0 0 0 3px rgba(255,255,255,0.15);
+}
+.node-photo { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; }
+.node-photo .scene { transform: scale(1.35); }
+.trail-node.locked { border-color: #3a4a72; cursor: not-allowed; }
+.trail-node.locked .node-photo { filter: grayscale(1) blur(2px) brightness(0.55); }
+.node-lock { position: absolute; inset: 0; display: grid; place-items: center; font-size: 1.8rem; filter: none; }
+.trail-node.mastered { border-color: var(--accent2); box-shadow: 0 0 0 4px rgba(244,183,64,0.35), 0 8px 18px rgba(0,0,0,0.4); }
+.trail-node.current::after {
+  content: ''; position: absolute; inset: -11px; border-radius: 50%;
+  border: 3px solid var(--w); animation: ring 1.6s ease-out infinite;
+}
+@keyframes ring { from { transform: scale(0.92); opacity: 0.9; } to { transform: scale(1.18); opacity: 0; } }
+.node-num {
+  position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
+  background: var(--w); color: #0d1426; font-weight: 900; font-size: 0.85rem;
+  min-width: 26px; height: 26px; border-radius: 13px; display: grid; place-items: center;
+  border: 3px solid #0d1426;
+}
+.trail-info { display: flex; flex-direction: column; gap: 2px; }
+.trail-info strong { font-size: 1.02rem; color: var(--ink); }
+.trail-here { font-size: 0.78rem; font-weight: 800; color: var(--w); }
+.trail-mascot { position: absolute; top: -4px; }
+.trail-row.left .trail-mascot { left: 92px; }
+.trail-row.right .trail-mascot { right: 92px; }
+
+/* ---------- Faz 3: beyaz dengesi kayması ---------- */
+.wb-cast { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: color; transition: opacity 0.25s, background 0.25s; }
+div.world-banner-img { position: relative; }
+
+/* ── Serbest mod: Çek ve Kaydet ── */
+.free-toast {
+  margin: -4px auto 10px; width: fit-content; max-width: 92%;
+  background: #1f2d4d; border: 1px solid rgba(255,255,255,0.18); color: #fff;
+  padding: 8px 14px; border-radius: 999px; font-weight: 700; font-size: 0.9rem; text-align: center;
+}
+.album-section { font-size: 1rem; margin: 6px 2px 10px; display: flex; align-items: baseline; gap: 8px; }
+.album-section small { opacity: 0.6; font-weight: 600; }
+.album-grid + .album-section { margin-top: 22px; }
+.polaroid { position: relative; }
+.po-delete {
+  position: absolute; top: -10px; right: -10px; width: 44px; height: 44px;
+  display: grid; place-items: center; border: none; background: transparent; cursor: pointer; padding: 0;
+}
+.po-delete::before {
+  content: '✕'; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  background: #e24c4c; color: #fff; font-size: 0.8rem; font-weight: 900; box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.po-delete { font-size: 0; }
+
+/* ── Ebeveyn Köşesi ── */
+.parents-link {
+  display: block; margin: 18px auto 4px; min-height: 44px; padding: 10px 18px;
+  background: transparent; border: none; color: var(--ink); opacity: 0.6;
+  font-family: inherit; font-size: 0.9rem; font-weight: 700; cursor: pointer; text-decoration: underline;
+}
+.gate { text-align: center; display: grid; gap: 10px; justify-items: center; }
+.gate p { margin: 0; }
+.gate-title { font-weight: 800; font-size: 1.1rem; }
+.gate-words { font-size: 1.35rem; font-weight: 800; color: var(--accent2); padding: 6px 0; }
+.gate-input {
+  width: 140px; text-align: center; font-size: 1.6rem; font-weight: 800; letter-spacing: 0.2em;
+  padding: 10px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.25);
+  background: var(--card2); color: var(--ink); font-family: inherit;
+}
+.gate-wrong { color: #ff8a8a; font-weight: 700; }
+.gate-btn, .p-danger {
+  min-height: 48px; padding: 12px 28px; border-radius: 999px; border: none; cursor: pointer;
+  font-family: inherit; font-size: 1rem; font-weight: 800;
+}
+.gate-btn { background: var(--accent); color: #fff; }
+.gate-btn:disabled { opacity: 0.4; cursor: default; }
+.parents .block h2 { margin-top: 0; }
+.p-intro { margin: 0 0 12px; opacity: 0.85; line-height: 1.5; font-size: 0.92rem; }
+.p-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.p-stats div { background: var(--card2); border-radius: 12px; padding: 10px 6px; text-align: center; display: grid; }
+.p-stats b { font-size: 1.4rem; }
+.p-stats span { font-size: 0.72rem; opacity: 0.75; }
+.p-world { margin: 0 0 14px; }
+.p-world-head { display: flex; justify-content: space-between; font-weight: 800; }
+.p-world-stars { color: var(--accent2); }
+.p-bar { height: 8px; border-radius: 99px; background: rgba(255,255,255,0.1); margin: 6px 0; overflow: hidden; }
+.p-bar span { display: block; height: 100%; background: var(--wc); border-radius: 99px; }
+.p-world p { margin: 0; font-size: 0.88rem; line-height: 1.5; opacity: 0.9; }
+.p-list { margin: 0; padding-left: 20px; display: grid; gap: 8px; font-size: 0.92rem; line-height: 1.45; }
+.p-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.p-link {
+  min-height: 44px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 999px;
+  background: var(--card2); color: var(--ink); font-weight: 700; text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.p-danger { background: transparent; color: #ff8a8a; border: 2px solid #ff8a8a; }
+
+/* ── Usta modu ── */
+.mode-switch {
+  display: inline-flex; margin-top: 10px; background: rgba(0,0,0,0.25); border-radius: 999px; padding: 3px;
+}
+.mode-switch button {
+  min-height: 40px; padding: 0 16px; border: none; border-radius: 999px; background: transparent;
+  color: var(--ink); font-family: inherit; font-weight: 800; font-size: 0.9rem; cursor: pointer; opacity: 0.7;
+}
+.mode-switch button.on { background: var(--card2); opacity: 1; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+.master-tag {
+  font-weight: 800; color: var(--accent2); padding: 8px 12px; border-radius: 999px;
+  background: rgba(255,200,60,0.12); font-size: 0.9rem;
+}
+.meter-hidden { text-align: center; font-size: 0.85rem; font-weight: 700; opacity: 0.75; margin: 8px 0 12px; }
+.crown-win {
+  margin: 8px auto 0; width: fit-content; padding: 8px 16px; border-radius: 999px;
+  background: linear-gradient(135deg, #ffd34d, #ffae2b); color: #4a3200; font-weight: 900;
+}
+.node-crown {
+  position: absolute; top: -14px; right: -6px; font-size: 1.4rem;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
+}
+
+/* ── Dil düğmeleri ── */
+.lang-btn { font-size: 0.8rem; font-weight: 900; letter-spacing: 0.04em; }
+.tut-lang {
+  position: absolute; top: 12px; left: 12px; min-height: 40px; padding: 0 12px; border-radius: 999px;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); color: var(--ink);
+  font-family: inherit; font-weight: 700; font-size: 0.85rem; cursor: pointer;
+}

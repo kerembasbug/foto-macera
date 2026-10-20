@@ -1,15 +1,19 @@
 import { useState } from 'react'
 import { WORLDS, LEVELS, BADGES, levelsByWorld, dailyLevelId, getLevel } from '../game.js'
-import { isMuted, setMuted } from '../sound.js'
+import { isMuted, setMuted, isMusicOn, setMusicOn } from '../sound.js'
 import { todayStr } from '../useProgress.js'
 import Mascot from '../components/Mascot.jsx'
 import Hero from '../components/Hero.jsx'
+import WorldTrail from '../components/WorldTrail.jsx'
+import Scene from '../Scene.jsx'
+import { tx, getLang, setLang } from '../i18n.js'
 
 // Ana harita: günlük görev, dünyalar, bölümler, yıldızlar, rozetler.
-export default function Home({ progress, onPlay, onFree, onAlbum }) {
+export default function Home({ progress, onPlay, onFree, onAlbum, onParents }) {
   const { starsOf, totalStars, isUnlocked, hasBadge, dailyDoneToday, dailyStreak, dailyStarsToday, albumCount } = progress
   const maxStars = LEVELS.length * 3
   const [muted, setMutedState] = useState(isMuted())
+  const [music, setMusicState] = useState(isMusicOn())
 
   const dailyLevel = getLevel(dailyLevelId(todayStr()))
 
@@ -18,29 +22,44 @@ export default function Home({ progress, onPlay, onFree, onAlbum }) {
     setMuted(v)
     setMutedState(v)
   }
+  function toggleMusic() {
+    const v = !music
+    setMusicOn(v)
+    setMusicState(v)
+  }
 
   return (
     <div className="home">
       <header className="hero-header">
         <Hero />
-        <button className="sound-btn hero-sound" onClick={toggleSound} aria-label="Ses aç/kapa">
-          {muted ? '🔇' : '🔊'}
-        </button>
+        <div className="hero-sound-group">
+          <button className="sound-btn lang-btn" onClick={() => setLang(getLang() === 'tr' ? 'en' : 'tr')}
+            aria-label={tx('Dili değiştir: English', 'Change language: Türkçe')}>
+            {getLang() === 'tr' ? 'EN' : 'TR'}
+          </button>
+          <button className="sound-btn" onClick={toggleMusic} aria-label={tx('Müzik aç/kapa', 'Music on/off')} disabled={muted}
+            style={{ opacity: muted || !music ? 0.5 : 1 }}>
+            🎵
+          </button>
+          <button className="sound-btn" onClick={toggleSound} aria-label={tx('Ses aç/kapa', 'Sound on/off')}>
+            {muted ? '🔇' : '🔊'}
+          </button>
+        </div>
         <div className="hero-overlay">
-          <Mascot size={58} />
+          <Mascot size={64} mood={totalStars > 0 ? 'happy' : 'idle'} />
           <div>
-            <h1>Foto Macera</h1>
-            <p className="subtitle">Görevi seç, deklanşöre bas, yıldız topla! 📸</p>
+            <h1>{tx('Foto Macera', 'Photo Quest')}</h1>
+            <p className="subtitle">{tx('Görevi seç, deklanşöre bas, yıldız topla! 📸', 'Pick a mission, press the shutter, collect stars! 📸')}</p>
           </div>
         </div>
       </header>
 
-      <div className="star-bank">⭐ {totalStars} / {maxStars} yıldız</div>
+      <div className="star-bank">⭐ {totalStars} / {maxStars} {tx('yıldız', 'stars')}</div>
 
       <section className={`daily ${dailyDoneToday ? 'done' : ''}`}>
         <div className="daily-head">
-          <span className="daily-tag">📅 Günün Görevi</span>
-          {dailyStreak > 0 && <span className="streak">🔥 {dailyStreak} gün</span>}
+          <span className="daily-tag">📅 {tx('Günün Görevi', 'Daily Mission')}</span>
+          {dailyStreak > 0 && <span className="streak">🔥 {dailyStreak} {tx('gün', dailyStreak === 1 ? 'day' : 'days')}</span>}
         </div>
         <div className="daily-body">
           <span className="daily-emoji">{dailyLevel.emoji}</span>
@@ -51,58 +70,45 @@ export default function Home({ progress, onPlay, onFree, onAlbum }) {
         </div>
         {dailyDoneToday ? (
           <div className="daily-done-row">
-            <span className="daily-check">✓ Bugün tamamlandı</span>
+            <span className="daily-check">✓ {tx('Bugün tamamlandı', 'Done for today')}</span>
             <span className="daily-earned">
               {[1, 2, 3].map((n) => (
                 <span key={n} className={n <= dailyStarsToday ? 'star on' : 'star'}>★</span>
               ))}
             </span>
-            <button className="daily-replay" onClick={() => onPlay(dailyLevel.id, true)}>Tekrar</button>
+            <button className="daily-replay" onClick={() => onPlay(dailyLevel.id, true)}>{tx('Tekrar', 'Again')}</button>
           </div>
         ) : (
-          <button className="daily-play" onClick={() => onPlay(dailyLevel.id, true)}>▶ Oyna</button>
+          <button className="daily-play" onClick={() => onPlay(dailyLevel.id, true)}>▶ {tx('Oyna', 'Play')}</button>
         )}
       </section>
 
       {WORLDS.map((w) => (
         <section className="world" key={w.id}>
           <div className="world-banner">
-            <img src={w.bg} className="world-banner-img" alt="" draggable="false" />
+            {w.bg
+              ? <img src={w.bg} className="world-banner-img" alt="" draggable="false" />
+              : <div className="world-banner-img"><Scene art={w.banner.art} scene={w.banner.scene} bgBlur={5} paused /></div>}
             <div className="world-banner-overlay" style={{ '--wc': w.color }} />
           </div>
           <h2 className="world-title" style={{ color: w.color }}>
             <span>{w.emoji}</span> {w.name}
             <small>{w.tagline}</small>
           </h2>
-          <div className="level-grid">
-            {levelsByWorld(w.id).map((lv) => {
-              const locked = !isUnlocked(lv.id)
-              const s = starsOf(lv.id)
-              return (
-                <button
-                  key={lv.id}
-                  className={`level-card ${locked ? 'locked' : ''} ${s === 3 ? 'mastered' : ''}`}
-                  disabled={locked}
-                  onClick={() => onPlay(lv.id)}
-                  style={{ '--w': w.color }}
-                >
-                  <span className="level-emoji">{locked ? '🔒' : lv.emoji}</span>
-                  <span className="level-name">{lv.title}</span>
-                  <span className="stars">
-                    {[1, 2, 3].map((n) => (
-                      <span key={n} className={n <= s ? 'star on' : 'star'}>★</span>
-                    ))}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
+          <WorldTrail
+            levels={levelsByWorld(w.id)}
+            color={w.color}
+            starsOf={starsOf}
+            isUnlocked={isUnlocked}
+            onPlay={onPlay}
+            crownOf={progress.crownOf}
+          />
         </section>
       ))}
 
       <section className="world badges">
         <h2 className="world-title" style={{ color: 'var(--accent2)' }}>
-          <span>🏅</span> Rozetler
+          <span>🏅</span> {tx('Rozetler', 'Badges')}
         </h2>
         <div className="badge-grid">
           {BADGES.map((b) => {
@@ -119,12 +125,14 @@ export default function Home({ progress, onPlay, onFree, onAlbum }) {
 
       <div className="home-actions">
         <button className="album-btn" onClick={onAlbum}>
-          🎞️ Albümüm <span className="album-badge">{albumCount}/{LEVELS.length}</span>
+          🎞️ {tx('Albümüm', 'My Album')} <span className="album-badge">{albumCount}/{LEVELS.length}</span>
         </button>
         <button className="free-btn" onClick={onFree}>
-          🧪 Serbest Mod
+          🧪 {tx('Serbest Mod', 'Free Mode')}
         </button>
       </div>
+
+      <button className="parents-link" onClick={onParents}>👪 {tx('Ebeveynler için', 'For parents')}</button>
     </div>
   )
 }
