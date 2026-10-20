@@ -1,7 +1,7 @@
 export default function Hero() {
   return (
     <div className="hero" aria-hidden="true">
-      <img src="/hero-bg.jpg" className="hero-img" alt="" draggable="false" />
+      <img src={`${import.meta.env.BASE_URL}hero-bg.webp`} className="hero-img" alt="" draggable="false" />
     </div>
   )
 }

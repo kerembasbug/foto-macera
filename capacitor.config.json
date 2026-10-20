@@ -1,0 +1,13 @@
+{
+  "appId": "net.revoba.fotomacera",
+  "appName": "Foto Macera",
+  "webDir": "dist",
+  "backgroundColor": "#142038",
+  "android": {
+    "backgroundColor": "#142038"
+  },
+  "ios": {
+    "backgroundColor": "#142038",
+    "contentInset": "never"
+  }
+}

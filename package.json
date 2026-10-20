@@ -7,14 +7,29 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:web": "BASE_URL=/foto-macera/ vite build",
+    "build:native": "CAP=1 vite build && npx cap sync",
+    "video:studio": "remotion studio video/index.jsx",
+    "video:tr": "remotion render video/index.jsx PromoTR art/promo/foto-macera-tanitim-tr.mp4 --chrome-mode=chrome-for-testing",
+    "video:en": "remotion render video/index.jsx PromoEN art/promo/photo-quest-promo-en.mp4 --chrome-mode=chrome-for-testing",
+    "release": "bash scripts/release.sh"
   },
   "dependencies": {
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.5.3",
+    "motion": "^14.4.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/cli": "8.5.3",
+    "@capacitor/ios": "8.5.3",
+    "@remotion/cli": "4.0.537",
     "@vitejs/plugin-react": "^4.3.4",
+    "gh-pages": "^6.3.0",
+    "remotion": "4.0.537",
     "vite": "^5.4.11",
     "vite-plugin-pwa": "^0.21.1"
   }

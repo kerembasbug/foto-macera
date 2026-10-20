@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Foto Macera</string>
+    <string name="title_activity_main">Foto Macera</string>
+    <string name="package_name">net.revoba.fotomacera</string>
+    <string name="custom_url_scheme">net.revoba.fotomacera</string>
+</resources>

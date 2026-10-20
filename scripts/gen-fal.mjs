@@ -1,55 +1,72 @@
-import { writeFileSync } from 'fs'
+// fal.ai görsel üretim aracı.
+// Anahtar KODA YAZILMAZ — ortam değişkeninden okunur:
+//   FAL_KEY=xxx node scripts/gen-fal.mjs art/manifest.json [--force] [--only=dosya-adı]
+//
+// Liste dosyası (manifest) bir dizi öğedir:
+//   { "file": "public/x.png", "prompt": "...", "size": "square",
+//     "ref": "public/art/mascot.png",   // varsa: bu resmi referans alıp düzenler (karakter tutarlılığı)
+//     "removeBg": true }               // varsa: arka planı şeffaf yapar
+import { readFileSync, writeFileSync, existsSync } from 'fs'
 
-const KEY = '***FAL_KEY_KALDIRILDI***'
-const API = 'https://fal.run/fal-ai/flux/schnell'
+const KEY = process.env.FAL_KEY
+if (!KEY) {
+  console.error('FAL_KEY ortam değişkeni yok. Kullanım: FAL_KEY=xxx node scripts/gen-fal.mjs <manifest.json>')
+  process.exit(1)
+}
 
-const IMAGES = [
-  {
-    file: 'public/hero-bg.jpg',
-    size: 'landscape_4_3',
-    prompt: 'colorful fantasy landscape for kids photography game, magical mountains, butterflies, wildflowers, glowing sun, watercolor illustration style, vibrant colors, no text, no camera, no people',
-  },
-  {
-    file: 'public/world-aperture.jpg',
-    size: 'landscape_4_3',
-    prompt: 'beautiful soft bokeh photography background, blurry dreamy garden, pink and purple flowers in focus, shallow depth of field, fairy tale style illustration, warm pastel colors, no text, no people',
-  },
-  {
-    file: 'public/world-speed.jpg',
-    size: 'landscape_4_3',
-    prompt: 'dynamic motion blur action scene, colorful butterflies in flight, speed lines, vibrant streaks of light, energetic cartoon illustration style, blue and orange palette, no text, no people',
-  },
-  {
-    file: 'public/world-light.jpg',
-    size: 'landscape_4_3',
-    prompt: 'magical night sky photography scene, glowing moon and stars, milky way, dark blue twilight, soft golden light, dreamy illustration style, purple and gold palette, no text, no people',
-  },
-  {
-    file: 'public/mascot-ai.png',
-    size: 'square',
-    prompt: 'cute chibi camera robot mascot character, big eyes, smile, blue body, cartoon style, white background, centered, no text, flat design, high contrast',
-  },
-]
+const args = process.argv.slice(2)
+const manifestPath = args.find((a) => !a.startsWith('--'))
+const force = args.includes('--force')
+const only = args.find((a) => a.startsWith('--only='))?.slice(7)
+if (!manifestPath) { console.error('Manifest yolu gerekli.'); process.exit(1) }
+
+const items = JSON.parse(readFileSync(manifestPath, 'utf8'))
+const auth = { Authorization: `Key ${KEY}`, 'Content-Type': 'application/json' }
+
+async function call(model, body) {
+  const res = await fetch(`https://fal.run/${model}`, { method: 'POST', headers: auth, body: JSON.stringify(body) })
+  if (!res.ok) throw new Error(`${model} ${res.status}: ${(await res.text()).slice(0, 300)}`)
+  return res.json()
+}
+
+const dataUri = (path) => {
+  const ext = path.endsWith('.png') ? 'png' : 'jpeg'
+  return `data:image/${ext};base64,${readFileSync(path).toString('base64')}`
+}
 
 async function generate(item) {
-  console.log(`Generating: ${item.file}`)
-  const res = await fetch(API, {
-    method: 'POST',
-    headers: { 'Authorization': `Key ${KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt: item.prompt, image_size: item.size, num_images: 1 }),
-  })
-  const json = await res.json()
-  if (!json.images?.[0]?.url) throw new Error(`No image: ${JSON.stringify(json)}`)
-  const url = json.images[0].url
-  console.log(`  ✓ ${url}`)
-
+  let url
+  if (item.ref) {
+    // Referans resmi koruyarak düzenle (aynı karakter, yeni poz/ifade)
+    const out = await call('fal-ai/flux-pro/kontext', {
+      prompt: item.prompt, image_url: dataUri(item.ref), output_format: 'png',
+    })
+    url = out.images[0].url
+  } else {
+    const out = await call(item.model ?? 'fal-ai/flux/schnell', {
+      prompt: item.prompt, image_size: item.size ?? 'square', num_images: 1,
+      num_inference_steps: item.steps ?? 4,
+    })
+    url = out.images[0].url
+  }
+  if (item.removeBg) {
+    const out = await call('fal-ai/birefnet', { image_url: url })
+    url = out.image.url
+  }
   const img = await fetch(url)
-  const buf = Buffer.from(await img.arrayBuffer())
-  writeFileSync(item.file, buf)
-  console.log(`  saved → ${item.file} (${(buf.length / 1024).toFixed(0)} KB)`)
+  writeFileSync(item.file, Buffer.from(await img.arrayBuffer()))
 }
 
-for (const item of IMAGES) {
-  await generate(item)
+let ok = 0, fail = 0
+for (const item of items) {
+  if (only && !item.file.includes(only)) continue
+  if (!force && existsSync(item.file)) { console.log(`· atlandı (var): ${item.file}`); continue }
+  try {
+    process.stdout.write(`→ ${item.file} ... `)
+    await generate(item)
+    console.log('✓'); ok++
+  } catch (e) {
+    console.log('✗ ' + e.message); fail++
+  }
 }
-console.log('\nAll done!')
+console.log(`\nBitti: ${ok} üretildi, ${fail} hata.`)
