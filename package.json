@@ -13,7 +13,8 @@
     "video:studio": "remotion studio video/index.jsx",
     "video:tr": "remotion render video/index.jsx PromoTR art/promo/foto-macera-tanitim-tr.mp4 --chrome-mode=chrome-for-testing",
     "video:en": "remotion render video/index.jsx PromoEN art/promo/photo-quest-promo-en.mp4 --chrome-mode=chrome-for-testing",
-    "release": "bash scripts/release.sh"
+    "release": "bash scripts/release.sh",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "@capacitor/app": "8.1.2",

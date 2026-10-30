@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Anahtar bekçisi — commit'e gizli anahtar ya da imza dosyası girerse commit'i durdurur.
+# Neden: 2026-06'da fal.ai anahtarı koda gömülü hâlde herkese açık depoya gitti (GitGuardian 2026-10-30).
+# Kurulum: npm install (prepare betiği) ya da elle: git config core.hooksPath .githooks
+# Yanlış alarmda bilerek geçmek için: git commit --no-verify
+set -uo pipefail
+
+# Bu dosyalar hiçbir koşulda depoya girmez (.env.example hariç)
+BLOCKED_FILES='(\.keystore|\.jks|\.p12|\.pem|keystore\.properties|(^|/)\.env(\.[^/]*)?)$'
+
+# "ad|kalıp" — kalıp grep -E ile, büyük/küçük harf duyarsız aranır
+PATTERNS=(
+  'fal.ai anahtarı|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:[0-9a-f]{32}'
+  'Google/Gemini anahtarı|AIza[0-9a-z_-]{35}'
+  'OpenAI/Anthropic anahtarı|sk-(ant-|proj-)?[0-9a-z_-]{32,}'
+  'GitHub jetonu|gh[pousr]_[0-9a-z]{36}'
+  'AWS anahtarı|AKIA[0-9a-z]{16}'
+  'Özel anahtar|-----BEGIN [a-z ]*PRIVATE KEY-----'
+  'Bearer jetonu|Bearer [0-9a-z._-]{30,}'
+)
+
+found=0
+
+while IFS= read -r -d '' file; do
+  if [[ "$file" =~ $BLOCKED_FILES && ! "$file" =~ \.env\.example$ ]]; then
+    echo "✖ $file — imza/şifre dosyası depoya girmez (.gitignore'a ekle)." >&2
+    found=1
+    continue
+  fi
+  [[ "$file" == "package-lock.json" ]] && continue
+
+  content=$(git show ":$file" 2>/dev/null) || continue
+  for entry in "${PATTERNS[@]}"; do
+    name="${entry%%|*}"
+    pattern="${entry#*|}"
+    # Değerin kendisini ekrana yazma: yalnız satır numarası
+    lines=$(grep -I -i -n -o -E -e "$pattern" <<<"$content" | cut -d: -f1 | sort -un | paste -sd, -)
+    if [[ -n "$lines" ]]; then
+      echo "✖ $file (satır $lines) — $name bulundu." >&2
+      found=1
+    fi
+  done
+done < <(git diff --cached --name-only --diff-filter=ACMR -z)
+
+if (( found )); then
+  cat >&2 <<'MSG'
+
+Commit durduruldu: gizli anahtarlar koda yazılmaz.
+Anahtarı ortam değişkeninden oku (örnek: FAL_KEY=xxx node scripts/gen-fal.mjs ...).
+Yanlış alarmsa: git commit --no-verify
+MSG
+  exit 1
+fi
+exit 0

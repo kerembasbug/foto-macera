@@ -3,10 +3,13 @@ dist/
 .DS_Store
 *.local
 
-# İmza anahtarı ve şifreler: ASLA depoya girmez
+# İmza anahtarı, şifreler ve API anahtarları: ASLA depoya girmez
 *.keystore
 *.jks
 keystore.properties
+.env
+.env.*
+!.env.example
 android-build/
 releases/
 art/promo/*.mp4
